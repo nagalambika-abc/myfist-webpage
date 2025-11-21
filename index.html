@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Science Quiz</title>
+    <style>
+        :root {
+            --primary: #1976d2;
+            --correct: #43a047;
+            --incorrect: #e53935;
+            --card-bg: #fff;
+            --card-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --border-radius: 12px;
+            --font: 'Segoe UI', Arial, sans-serif;
+        }
+        body {
+            margin: 0;
+            font-family: var(--font);
+            background: #f4f6fb;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .quiz-container {
+            width: 100%;
+            max-width: 400px;
+            background: var(--card-bg);
+            box-shadow: var(--card-shadow);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            margin: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
+        }
+        .question-number {
+            color: #888;
+            font-size: 0.95rem;
+            margin-bottom: 0.3rem;
+        }
+        .question-text {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+        }
+        .option {
+            background: #f0f4fa;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            padding: 0.7rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s, border 0.2s;
+            font-size: 1rem;
+            outline: none;
+            text-align: left;
+        }
+        .option.selected {
+            border-color: var(--primary);
+            background: #e3f0fd;
+        }
+        .option.correct {
+            border-color: var(--correct);
+            background: #e8f5e9;
+            color: var(--correct);
+        }
+        .option.incorrect {
+            border-color: var(--incorrect);
+            background: #ffebee;
+            color: var(--incorrect);
+        }
+        .feedback {
+            font-size: 1rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+            min-height: 1.5em;
+        }
+        .feedback.correct {
+            color: var(--correct);
+        }
+        .feedback.incorrect {
+            color: var(--incorrect);
+        }
+        .btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.8rem 1.2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: background 0.2s;
+        }
+        .btn:disabled {
+            background: #b0bec5;
+            cursor: not-allowed;
+        }
+        .score-section {
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 500px) {
+            .quiz-container {
+                padding: 1rem;
+                max-width: 100vw;
+            }
+            .question-text {
+                font-size: 1rem;
+            }
+            .btn {
+                font-size: 0.98rem;
+                padding: 0.7rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container" id="quiz">
+        <!-- Quiz content will be injected here -->
+    </div>
+    <script>
+        const questions = [
+            {
+                question: "What is the chemical symbol for water?",
+                options: ["WO", "H2O", "O2", "HO2"],
+                answer: 1
+            },
+            {
+                question: "Which planet is known as the Red Planet?",
+                options: ["Venus", "Mars", "Jupiter", "Mercury"],
+                answer: 1
+            },
+            {
+                question: "What is the powerhouse of the cell?",
+                options: ["Nucleus", "Mitochondria", "Ribosome", "Chloroplast"],
+                answer: 1
+            },
+            {
+                question: "What force keeps us on the ground?",
+                options: ["Magnetism", "Gravity", "Friction", "Electricity"],
+                answer: 1
+            },
+            {
+                question: "Which gas do plants absorb from the atmosphere?",
+                options: ["Oxygen", "Nitrogen", "Carbon Dioxide", "Hydrogen"],
+                answer: 2
+            },
+            {
+                question: "What is the boiling point of water at sea level?",
+                options: ["100°C", "0°C", "50°C", "212°C"],
+                answer: 0
+            },
+            {
+                question: "Which organ pumps blood throughout the body?",
+                options: ["Liver", "Lungs", "Heart", "Kidney"],
+                answer: 2
+            },
+            {
+                question: "What is the basic unit of heredity?",
+                options: ["Gene", "Chromosome", "Cell", "Protein"],
+                answer: 0
+            },
+            {
+                question: "Which element is needed for the formation of hemoglobin?",
+                options: ["Calcium", "Iron", "Potassium", "Sodium"],
+                answer: 1
+            },
+            {
+                question: "What type of energy is stored in food?",
+                options: ["Kinetic", "Thermal", "Chemical", "Electrical"],
+                answer: 2
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let selectedOption = null;
+        let quizCompleted = false;
+
+        const quizContainer = document.getElementById('quiz');
+
+        function renderQuestion() {
+            const q = questions[currentQuestion];
+            quizContainer.innerHTML = `
+                <div class="question-number">Question ${currentQuestion + 1} of ${questions.length}</div>
+                <div class="question-text">${q.question}</div>
+                <div class="options">
+                    ${q.options.map((opt, idx) => `
+                        <button class="option" data-idx="${idx}" tabindex="0">${opt}</button>
+                    `).join('')}
+                </div>
+                <div class="feedback" id="feedback"></div>
+                <button class="btn" id="submitBtn" disabled>Submit</button>
+            `;
+
+            document.querySelectorAll('.option').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    if (quizCompleted) return;
+                    document.querySelectorAll('.option').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    selectedOption = parseInt(btn.getAttribute('data-idx'));
+                    document.getElementById('submitBtn').disabled = false;
+                });
+            });
+
+            document.getElementById('submitBtn').onclick = handleSubmit;
+        }
+
+        function handleSubmit() {
+            if (selectedOption === null) return;
+            const q = questions[currentQuestion];
+            const options = document.querySelectorAll('.option');
+            options.forEach((btn, idx) => {
+                btn.disabled = true;
+                if (idx === q.answer) btn.classList.add('correct');
+                if (idx === selectedOption && selectedOption !== q.answer) btn.classList.add('incorrect');
+            });
+
+            const feedback = document.getElementById('feedback');
+            if (selectedOption === q.answer) {
+                feedback.textContent = "Correct!";
+                feedback.className = "feedback correct";
+                score++;
+            } else {
+                feedback.textContent = `Incorrect! The correct answer is "${q.options[q.answer]}".`;
+                feedback.className = "feedback incorrect";
+            }
+            document.getElementById('submitBtn').textContent = currentQuestion < questions.length - 1 ? "Next" : "See Results";
+            document.getElementById('submitBtn').onclick = nextQuestion;
+        }
+
+        function nextQuestion() {
+            selectedOption = null;
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                renderQuestion();
+            } else {
+                showScore();
+            }
+        }
+
+        function showScore() {
+            quizCompleted = true;
+            quizContainer.innerHTML = `
+                <div class="score-section">
+                    You scored ${score} out of ${questions.length}!
+                </div>
+                <button class="btn" id="restartBtn">Restart Quiz</button>
+            `;
+            document.getElementById('restartBtn').onclick = restartQuiz;
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            selectedOption = null;
+            quizCompleted = false;
+            renderQuestion();
+        }
+
+        // Initial render
+        renderQuestion();
+    </script>
+</body>
+</html>
